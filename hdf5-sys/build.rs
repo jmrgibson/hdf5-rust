@@ -105,7 +105,12 @@ fn get_runtime_version_single<P: AsRef<Path>>(path: P) -> io::Result<Version> {
 
 fn validate_runtime_version(config: &Config) {
     println!("Looking for HDF5 library binary...");
-    let libfiles = &["libhdf5.dylib", "libhdf5.so", "hdf5.dll"];
+    let libfiles = &[
+        "libhdf5.dylib",
+        "libhdf5.so",
+        "hdf5.dll", // conda/standalone install on windows
+        "libhdf5-0.dll",  // msys2 on windows
+    ];
     let mut link_paths = config.link_paths.clone();
     if cfg!(all(unix, not(target_os = "macos"))) {
         if let Some(ldv) = run_command("ld", &["--verbose"]) {
@@ -537,9 +542,7 @@ impl LibrarySearcher {
             if link_paths.is_empty() {
                 if let Some(root_dir) = inc_dir.parent() {
                     link_paths.push(root_dir.join("lib"));
-                    if cfg!(target_env = "msvc") {
-                        link_paths.push(root_dir.join("bin"));
-                    }
+                    link_paths.push(root_dir.join("bin"));
                 }
             }
             let header = Header::parse(&inc_dir);
